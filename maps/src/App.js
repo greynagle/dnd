@@ -157,7 +157,64 @@ class Grid extends React.Component {
     this.setState({ winWidth: window.innerWidth, winHeight: window.innerHeight });
   }
 
+  riverRun = (side, cur, grid) => {
+    let next = []
 
+    switch (side) {
+      case 1:
+        next = [
+          cur + (this.props.width - 1),
+          cur + this.props.width,
+          cur + (this.props.width + 1)
+        ];
+      break;
+      case 2:
+        next = [
+          cur - (this.props.width - 1),
+          cur + 1,
+          cur + (this.props.width + 1)
+        ];
+      break;
+      case 3:
+        next = [
+          cur - (this.props.width + 1),
+          cur - 1,
+          cur + (this.props.width - 1)
+        ];
+      break;
+      case 4:
+        next = [
+          cur - (this.props.width + 1),
+          cur - this.props.width,
+          cur - (this.props.width - 1)
+        ];
+      break;
+      default:
+      break;
+    }
+    console.log(next)
+
+    let tempNext = next[Math.round(Math.random()*(next.length-1))];
+    while (tempNext > (this.props.width * this.props.height) - 1 || tempNext < 0) {
+      tempNext = next[Math.round(Math.random()*(next.length-1))];
+    }
+
+    console.log(tempNext)
+
+    grid[tempNext] = 'w';
+
+    if (
+      tempNext <= (this.props.width - 1)  ||
+      (tempNext % this.props.width) === 0 ||
+      (tempNext % this.props.width) === (this.props.width - 1) ||
+      (tempNext > this.props.width*(this.props.height - 1))
+    ){ 
+      return (grid);
+    } else {
+      this.riverRun(side, tempNext, grid)
+      return (grid);
+    }
+  }
 
   render() {
     //initialize grid
@@ -165,31 +222,57 @@ class Grid extends React.Component {
     for (let i = 0; i < this.props.height; i++) {
       for (let j = 0; j < this.props.width; j++) {
         // debugger;
-        blankGrid.push({x: j+1, y: i+1});
+        blankGrid.push(0);
       }
     }
 
-    //gets perimeter cell values
-    const perimGrid = [];
-    for (let i = 0; i <= blankGrid.length; i++)
+    //Gets the array of perimiter cells
+    const perimArray = [];
+    for (let i = 0; i < blankGrid.length; i++) {
       if (
-        blankGrid[i].x == 1 ||
-        blankGrid[i].y == 1 ||
-        (blankGrid[i].x == 1 && blankGrid[i].y == 1) ||
-        blankGrid[i].x == this.props.width ||
-        blankGrid[i].y == this.props.height ||
-        (blankGrid[i].x == this.props.width && blankGrid[i].y == this.props.height)
-      ) {
-        perimGrid.push(blankGrid[i])
+        i <= (this.props.width - 1)  ||
+        (i%this.props.width) === 0 ||
+        (i%this.props.width) === (this.props.width - 1) ||
+        (i > this.props.width*(this.props.height - 1))
+      ){
+        perimArray.push(i);
       }
-
-    console.log(blankGrid)
+     }
+     //console.log(perimArray)
 
     //fills grid per settings on water/land slider
     //debugger;
-    const waterPath = {};
-    const perimeter = (2*this.props.width) + (2*this.props.height);
-    const seed = Math.round(Math.random()*perimeter);
+    const waterPath = [];
+    const seed = Math.round(Math.random()*(perimArray.length-1))
+    let seedGrid = blankGrid;
+    const seedCell = perimArray[seed]
+    let side = 0
+    
+    if (seedCell <= (this.props.width - 1)) {
+      side = 1;
+    } else if ((seedCell % this.props.width) === 0){
+      side = 2;
+    } else if ((seedCell % this.props.width) === (this.props.width - 1)) {
+      side = 3;
+    } else if ((seedCell > this.props.width*(this.props.height - 1))) {
+      side = 4;
+    } else {
+      side = null;
+    }
+
+    console.log(side)
+
+    seedGrid[seedCell] = 'w';
+
+    seedGrid = this.riverRun(side, seedCell, seedGrid);
+
+
+
+
+
+
+
+
 
 
 
@@ -201,29 +284,65 @@ class Grid extends React.Component {
     return (
       <div>
         <br/>
-        {blankGrid.map((elem, index) => {
-          // debugger;
-          return(
-            (index%this.props.width) !== 0 ? 
-            <canvas 
-              key={'x' + elem.x + 'y' + elem.y} 
-              width={pxValue + 'px'} 
-              height={pxValue + 'px'} 
-              style={{display: 'inline', border:'1px solid #000000'}} 
-            /> :
-            <React.Fragment key={index}>
-              <hr 
-                style={{height:'1px', visibility:'hidden', marginBottom: '-15px'}} 
-              />
-              <canvas 
-                key={'x' + elem.x + 'y' + elem.y}
-                width={pxValue + 'px'} 
-                height={pxValue + 'px'}  
-                style={{display: 'inline', border:'1px solid #000000'}} 
-              />
-            </React.Fragment>
-          )})
-        }
+        {
+          seedGrid.map((elem, index) => {
+            // debugger;
+            if (elem == 0) {
+              return (
+                (index % this.props.width) !== 0 ? 
+                  (
+                    <canvas 
+                      key={index}
+                      value={elem} 
+                      width={pxValue + 'px'} 
+                      height={pxValue + 'px'} 
+                      style={{display: 'inline', border:'1px solid #000000'}} 
+                    />
+                  ) : (
+                    <React.Fragment key={index}>
+                      <hr 
+                        style={{height:'1px', visibility:'hidden', marginBottom: '-15px'}} 
+                      />
+                      <canvas 
+                        key={index}
+                        value={elem}
+                        width={pxValue + 'px'} 
+                        height={pxValue + 'px'}  
+                        style={{display: 'inline', border:'1px solid #000000'}} 
+                      />
+                      
+                    </React.Fragment>
+                  )
+              )
+            } else if (elem == 'w') {
+              return (
+                (index % this.props.width) !== 0 ? 
+                  (
+                    <canvas 
+                      key={index}
+                      value={elem} 
+                      width={pxValue + 'px'} 
+                      height={pxValue + 'px'} 
+                      style={{display: 'inline', border:'1px solid #000000', backgroundColor:'#006994'}}
+                    />
+                  ) : (
+                    <React.Fragment key={index}>
+                      <hr 
+                        style={{height:'1px', visibility:'hidden', marginBottom: '-15px'}} 
+                      />
+                      <canvas 
+                        key={index}
+                        value={elem}
+                        width={pxValue + 'px'} 
+                        height={pxValue + 'px'}  
+                        style={{display: 'inline', border:'1px solid #000000', backgroundColor:'#006994'}} 
+                      />
+                    </React.Fragment>
+                  )
+              )
+            }
+        })
+      }
       </div>
     )
   }
